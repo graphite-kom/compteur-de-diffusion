@@ -275,10 +275,13 @@
 				
 			}else{
 				
+				$public_key = generateRandomString(64);
+				
 				$anim = Model::factory('AnimCount')->create();
 				$anim->anim_name 			= $anim_name;
 				$anim->total_play_count		= $count;
 				$anim->first_record_date	= $record_date;
+				$anim->public_key			= $public_key;
 				
 				if(!$anim->save()){
 					
@@ -696,14 +699,6 @@
 	});
 	
 	// + - + - + - + - + - + - + - + - + - + - + - + - 
-	
-	$app->get('/get_headers/', function(){
-		
-		var_dump(apache_request_headers());
-		
-		echo "<hr/>";
-		
-	});
 	
 	$app->run();
 	
