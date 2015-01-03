@@ -1,0 +1,4 @@
+# ignoring all ._* files
+.*
+!.htaccess
+!.gitignore
