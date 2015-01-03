@@ -549,37 +549,7 @@
 	
 	$app->post('/record_diffusion', function() use ($app){
 		
-		// 
-		
-		$req = $app->request;
-		
-		$content_type = $req->getContentType();
-		
-		var_dump($req);
-		
-		echo "// - - - - - - - - - - - - - - - - - - - - - - - - \n";
-		
-		print_r($_POST);
-		
-		$ip_address = $_SERVER['REMOTE_ADDR'];
-		
-		$response = var_export($app->response, true);
-		
-		$app->response->headers->set('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-		
-		if(!empty($_POST["shop"])){
-			
-			log_error($_POST["shop"], $_POST["machine"], "", "", $_POST["post_obj"], $content_type, $ip_address, date('Y-m-d H:i:s'), "");
-			
-		}else{
-			
-			log_error("", "", "", "", "", $content_type."|".$response."".$app->response->getBody(), $ip_address, date('Y-m-d H:i:s'), "");
-			
-		}
-		
-		
-		
-		// $app->halt(403);
+		$app->halt(403);
 			
 	});
 	
