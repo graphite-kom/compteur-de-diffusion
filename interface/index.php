@@ -255,6 +255,183 @@
 		
 	}
 	
+	function build_interval_array($min_date, $max_date, $animation_log_mode = "daily"){
+		
+		$interval_array = array();
+		
+		if($animation_log_mode == "hourly"){
+			
+			$pointer_date_time = $min_date;
+				
+			while($pointer_date_time <= $max_date){
+				
+				$interval_array[] = $pointer_date_time;
+				
+				$pointer_time = strtotime($pointer_date_time);
+				
+				$made_time = mktime(date('H', $pointer_time) + 1, date('i', $pointer_time), date('s', $pointer_time), date('n', $pointer_time), date('j', $pointer_time), date('Y', $pointer_time));
+				
+				$pointer_date_time = date("Y-m-d H:i:s", $made_time);
+				
+			}
+			
+		}elseif($animation_log_mode == "daily"){
+			
+			$min_time = strtotime($min_date);
+			
+			$start_time = mktime(0, 0, 0, date('n', $min_time), date('j', $min_time), date('Y', $min_time));
+			
+			$pointer_date = date("Y-m-d", $start_time);
+			
+			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+			
+			$max_time = strtotime($max_date);
+			
+			$end_time = mktime(23, 59, 59, date('n', $max_time), date('j', $max_time), date('Y', $max_time));
+			
+			$end_date = date("Y-m-d", $end_time);
+			
+			while($pointer_date <= $end_date){
+				
+				$interval_array[] = $pointer_date;
+				
+				$pointer_time = strtotime($pointer_date);
+				
+				$made_time = mktime(23, 59, 59, date('n', $pointer_time), date('j', $pointer_time) + 1, date('Y', $pointer_time));
+				
+				$pointer_date = date("Y-m-d", $made_time);
+				
+			}
+			
+		}
+		
+		return $interval_array;
+			
+	}
+	
+	function build_time_line_data($hourly_anim_data, $min_date, $max_date, $animation_log_mode = "daily"){
+		
+		$local_array = array();
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		$interval_array = build_interval_array($min_date, $max_date, $animation_log_mode);
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		if($animation_log_mode == "hourly"){
+			
+			$date_format = 'Y-m-d H:i:s';
+			
+		}elseif($animation_log_mode == "daily"){
+			
+			$date_format = 'Y-m-d';
+			
+		}
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		if(!empty($interval_array)){
+			
+			$i = 0;
+			
+			foreach($interval_array as $interval_date){
+				
+				$interval_count = 0;
+				
+				$machine_array = array();
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - 
+				
+				foreach($hourly_anim_data as $record){
+					
+					$tmp_date_obj = new DateTime($record->record_date);
+					
+					$record_date = $tmp_date_obj->format($date_format);
+					
+					// + - + - + - + - + - + - + - + - + - + - + - + - 
+					
+					if($interval_date == $record_date){
+						
+						// daily_count per animation
+						$interval_count += (int)$record->hourly_count;
+						
+						// daily machines per animation
+						$tmp_machine_array =explode("|", $record->machines);
+						
+						foreach($tmp_machine_array as $tmp_machine){
+							
+							if(!in_array($tmp_machine, $machine_array)){
+								
+								$machine_array[] = $tmp_machine;
+								
+							}
+								
+						}
+						
+					}
+					
+					// + - + - + - + - + - + - + - + - + - + - + - + - 
+					
+				}
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - 
+				
+				$local_array[$i]["record_date"] 	= $interval_date;
+				
+				$local_array[$i]["count"] 			= $interval_count;
+				
+				$machines 							= implode("|", $machine_array);
+				
+				$local_array[$i]["machines"] 		= $machines;
+				
+				$i++;	
+			
+			}
+				
+		}
+
+		
+		return $local_array;
+		
+	}
+	
+	function build_chart_data($time_line_data, $mode){
+		
+		switch($mode){
+			
+			case "diffusions":
+				
+				$return_sting = chr(9).chr(9).chr(9).chr(9)."['Interval', 'Diffusions'],".chr(10);
+		
+				foreach($time_line_data as $time_interval){
+					
+					$return_sting .= chr(9).chr(9).chr(9).chr(9)."['".$time_interval["record_date"]."', ".$time_interval["count"]."],".chr(10);
+						
+				}
+				
+				break;
+				
+			case "machines":
+				
+				$return_sting = chr(9).chr(9).chr(9).chr(9)."['Interval', 'Machines'],".chr(10);
+		
+				foreach($time_line_data as $time_interval){
+					
+					$machine_count = (!empty($time_interval["machines"]))?(int)count(explode("|", $time_interval["machines"])):0;
+					
+					$return_sting .= chr(9).chr(9).chr(9).chr(9)."['".$time_interval["record_date"]."', ".$machine_count."],".chr(10);
+						
+				}
+				
+				break;
+			
+		}
+		
+		return $return_sting;
+		
+	}
+		
 	// + - + - + - + - + - + - + - + - + - + - + - + - 
 	// ROOT_PATH
 	
@@ -312,7 +489,7 @@
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
 			
 			// Get animation Info
-			$anim_data 			= ORM::for_table('hourly_play_count')->where('anim_count_id', $anim_id)->order_by_asc('record_date')->find_many();
+			$hourly_anim_data 	= ORM::for_table('hourly_play_count')->where('anim_count_id', $anim_id)->order_by_asc('record_date')->find_many();
 			
 			// Get Min date
 			$min_date 			= ORM::for_table('hourly_play_count')->where('anim_count_id', $anim_id)->min('record_date');
@@ -387,13 +564,36 @@
 			$local_array["Nombre moyen de diffusions par écran par jour"] = ( ( $anim_count->total_play_count / count($nb_pdv_and_ecrans_per_anim['ecrans']) ) / $nb_jours);
 			
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+			// Main data
+			
+			// time line data
+			
+			$hourly_time_line_data 	= build_time_line_data($hourly_anim_data, $min_date, $max_date, "hourly");
+			
+			$daily_time_line_data 	= build_time_line_data($hourly_anim_data, $min_date, $max_date, "daily");
+			
+			// chart data
+			
+			$hourly_diffusion_chart_data 	= build_chart_data($hourly_time_line_data, "diffusions");
+			
+			$hourly_machines_chart_data 	= build_chart_data($hourly_time_line_data, "machines");
+			
+			$daily_diffusion_chart_data 	= build_chart_data($daily_time_line_data, "diffusions");
+			
+			$daily_machine_chart_data 		= build_chart_data($daily_time_line_data, "machines");
+			
+			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
 			
 			$app->render('animation_log.php', array(
-				'template'		=> 'details',
-				'anim_name'		=> $anim_name,
-				'anim_details' 	=> $local_array, 
-				'page_title' 	=> $anim_name,
-				'root_path' 	=> ROOT_PATH
+				'template'						=> 'details',
+				'anim_name'						=> $anim_name,
+				'anim_details' 					=> $local_array, 
+				'hourly_diffusion_chart_data'	=> $hourly_diffusion_chart_data,
+				'hourly_machines_chart_data'	=> $hourly_machines_chart_data, 
+				'daily_diffusion_chart_data'	=> $daily_diffusion_chart_data,
+				'daily_machine_chart_data'		=> $daily_machine_chart_data,
+				'page_title' 					=> $anim_name,
+				'root_path' 					=> ROOT_PATH
 			));
 			 
 			 

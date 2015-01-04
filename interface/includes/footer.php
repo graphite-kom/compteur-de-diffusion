@@ -58,8 +58,183 @@
 	
 		}
 		
+	
+		
+		if($template == 'details'){
+			
 	?>
     
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    
+    <script type="text/javascript">
+		
+		google.load("visualization", "1", {packages:["corechart"]});
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		google.setOnLoadCallback(drawHourlyDiffusionChart);
+		
+		function drawHourlyDiffusionChart() {
+		
+			var data = google.visualization.arrayToDataTable([
+				/*
+				['Interval', 'Diffusions', 'Machines'],
+				['2004',  1000,      400],
+				['2005',  1170,      460],
+				['2006',  660,       1120],
+				['2007',  1030,      540]
+				*/
+				
+<?php
+	
+	echo $hourly_diffusion_chart_data;
+	
+?>
+				
+			]);
+			
+			var options = {
+				title: 'Diffusions par heure',
+				hAxis: {
+					title: 'Heures',
+					titleTextStyle: {color: 'blue'}
+				},
+				vAxis: {minValue: 0},
+				colors:['#428bca']
+			};
+			
+			var chart = new google.visualization.AreaChart(document.getElementById('hourlyDiffusionChart'));
+			
+			chart.draw(data, options);
+		
+		}
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		google.setOnLoadCallback(drawHourlyMachineChart);
+		
+		function drawHourlyMachineChart() {
+		
+			var data = google.visualization.arrayToDataTable([
+				/*
+				['Interval', 'Diffusions', 'Machines'],
+				['2004',  1000,      400],
+				['2005',  1170,      460],
+				['2006',  660,       1120],
+				['2007',  1030,      540]
+				*/
+				
+<?php
+	
+	echo $hourly_machines_chart_data;
+	
+?>
+				
+			]);
+			
+			var options = {
+				title: 'Machines diffusant cette publicité par heure',
+				hAxis: {
+					title: 'Heures',
+					titleTextStyle: {color: 'blue'}
+				},
+				vAxis: {minValue: 0},
+				colors:['#5cb85c']
+			};
+			
+			var chart = new google.visualization.AreaChart(document.getElementById('hourlyMachineChart'));
+			
+			chart.draw(data, options);
+		
+		}
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		google.setOnLoadCallback(drawDailyDiffusionChart);
+		
+		function drawDailyDiffusionChart() {
+		
+			var data = google.visualization.arrayToDataTable([
+				/*
+				['Interval', 'Diffusions', 'Machines'],
+				['2004',  1000,      400],
+				['2005',  1170,      460],
+				['2006',  660,       1120],
+				['2007',  1030,      540]
+				*/
+				
+<?php
+	
+	echo $daily_diffusion_chart_data;
+	
+?>
+				
+			]);
+			
+			var options = {
+				title: 'Diffusions par jour',
+				hAxis: {
+					title: 'Jours',
+					titleTextStyle: {color: 'blue'}
+				},
+				vAxis: {minValue: 0},
+				colors:['#428bca']
+			};
+			
+			var chart = new google.visualization.AreaChart(document.getElementById('dailyDiffusionChart'));
+			
+			chart.draw(data, options);
+		
+		}
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+		
+		google.setOnLoadCallback(drawDailyMachineChart);
+		
+		function drawDailyMachineChart() {
+		
+			var data = google.visualization.arrayToDataTable([
+				/*
+				['Interval', 'Diffusions', 'Machines'],
+				['2004',  1000,      400],
+				['2005',  1170,      460],
+				['2006',  660,       1120],
+				['2007',  1030,      540]
+				*/
+				
+<?php
+	
+	echo $daily_machine_chart_data;
+	
+?>
+				
+			]);
+			
+			var options = {
+				title: 'Machines diffusant cette publicité par jour',
+				hAxis: {
+					title: 'Jours',
+					titleTextStyle: {color: 'blue'}
+				},
+				vAxis: {minValue: 0},
+				colors:['#5cb85c']
+			};
+			
+			var chart = new google.visualization.AreaChart(document.getElementById('dailyMachineChart'));
+			
+			chart.draw(data, options);
+		
+		}
+		
+		// + - + - + - + - + - + - + - + - + - + - + - + - + - + -   
+		
+     </script>
+    
+    <?php
+		
+		}
+		
+	?>
     
 </body>
 </html>

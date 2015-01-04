@@ -35,7 +35,26 @@
 	
 	}
 
-?>
+?>					<tr>
+						<td colspan="2">
+                        	<div id="hourlyDiffusionChart" style="height: 300px;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+						<td colspan="2">
+                        	<div id="hourlyMachineChart" style="height: 300px;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+						<td colspan="2">
+                        	<div id="dailyDiffusionChart" style="height: 300px;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+						<td colspan="2">
+                        	<div id="dailyMachineChart" style="height: 300px;"></div>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
