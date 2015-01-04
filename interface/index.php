@@ -2,8 +2,10 @@
 
 	ini_set('display_errors', 1);
 	ini_set('error_reporting', E_ALL);
+	ini_set('mbstring.internal_encoding','UTF-8');
 	
 	require_once '../libraries/connection_info.php';
+	require_once '../libraries/PHPExcel-master/Classes/PHPExcel.php';
 	require_once '../libraries/idiorm/idiorm.php';
 	require_once '../libraries/paris/paris.php';
 	require_once '../libraries/Slim/Slim/Slim.php';
@@ -167,16 +169,16 @@
 			
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
 			
-			case "animation_log_mode":
+			case "view_mode":
 				
 				$allowed_modes = array(
-					"hourly",
-					"daily"
+					"view",
+					"export"
 				);
 				
 				if(!in_array($param, $allowed_modes)){
 			
-					throw new Exception("Invalid animation_log_mode parameter : ".var_export($param, true));
+					throw new Exception("Invalid view_mode parameter : ".var_export($param, true));
 					
 				}
 				
@@ -466,14 +468,14 @@
 	
 	// + - + - + - + - + - + - + - + - + - + - + - + - 
 	
-	$app->get('/animation_log/:public_key/:animation_log_mode', 'get_root_path', function($public_key, $animation_log_mode) use ($app){
+	$app->get('/animation_log/:public_key/:view_mode', 'get_root_path', function($public_key, $view_mode) use ($app){
 		
 		$local_array = array();
 		
 		try{
 			
 			//  Check parameters - animation_log_mode
-			$animation_log_mode	= checkParam($animation_log_mode, "animation_log_mode");
+			$animation_log_mode	= checkParam($view_mode, "view_mode");
 			
 			//  Check parameters - public_key
 			$public_key 		= checkParam($public_key, "public_key");
@@ -535,7 +537,7 @@
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
 			// Nombre moyen de diffusions par écran sur la période de la campagne
 			
-			$local_array["Nombre moyen de diffusions par écran sur la période de la campagne"] = ( $anim_count->total_play_count / count($nb_pdv_and_ecrans_per_anim['ecrans']) );
+			// $local_array["Nombre moyen de diffusions par écran sur la période de la campagne"] = ( $anim_count->total_play_count / count($nb_pdv_and_ecrans_per_anim['ecrans']) );
 			
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
 			// Dates de diffusion
@@ -571,38 +573,167 @@
 			$hourly_time_line_data 	= build_time_line_data($hourly_anim_data, $min_date, $max_date, "hourly");
 			
 			$daily_time_line_data 	= build_time_line_data($hourly_anim_data, $min_date, $max_date, "daily");
-			
-			// chart data
-			
-			$hourly_diffusion_chart_data 	= build_chart_data($hourly_time_line_data, "diffusions");
-			
-			$hourly_machines_chart_data 	= build_chart_data($hourly_time_line_data, "machines");
-			
-			$daily_diffusion_chart_data 	= build_chart_data($daily_time_line_data, "diffusions");
-			
-			$daily_machine_chart_data 		= build_chart_data($daily_time_line_data, "machines");
-			
+						
 			// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
 			
-			$app->render('animation_log.php', array(
-				'template'						=> 'details',
-				'anim_name'						=> $anim_name,
-				'anim_details' 					=> $local_array, 
-				'hourly_diffusion_chart_data'	=> $hourly_diffusion_chart_data,
-				'hourly_machines_chart_data'	=> $hourly_machines_chart_data, 
-				'daily_diffusion_chart_data'	=> $daily_diffusion_chart_data,
-				'daily_machine_chart_data'		=> $daily_machine_chart_data,
-				'page_title' 					=> $anim_name,
-				'root_path' 					=> ROOT_PATH
-			));
-			 
+			if($view_mode == "view"){
+				
+				// chart data
+			
+				$hourly_diffusion_chart_data 	= build_chart_data($hourly_time_line_data, "diffusions");
+				
+				$hourly_machines_chart_data 	= build_chart_data($hourly_time_line_data, "machines");
+				
+				$daily_diffusion_chart_data 	= build_chart_data($daily_time_line_data, "diffusions");
+				
+				$daily_machine_chart_data 		= build_chart_data($daily_time_line_data, "machines");
+				
+				// render
+				$app->render('animation_log.php', array(
+					'template'						=> 'details',
+					'anim_name'						=> $anim_name,
+					'public_key'					=> $public_key,
+					'anim_details' 					=> $local_array, 
+					'hourly_diffusion_chart_data'	=> $hourly_diffusion_chart_data,
+					'hourly_machines_chart_data'	=> $hourly_machines_chart_data, 
+					'daily_diffusion_chart_data'	=> $daily_diffusion_chart_data,
+					'daily_machine_chart_data'		=> $daily_machine_chart_data,
+					'page_title' 					=> $anim_name,
+					'root_path' 					=> ROOT_PATH
+				));
+				
+			}elseif($view_mode == "export"){
+				
+				// Create new PHPExcel object
+				$objPHPExcel = new PHPExcel();
+				
+				// Set document properties
+				$objPHPExcel->getProperties()->setCreator("BimediaTV")
+											 ->setLastModifiedBy("BimediaTV")
+											 ->setTitle("Office 2007 XLSX Document")
+											 ->setSubject("Office 2007 XLSX Document")
+											 ->setDescription("Document for Office 2007 XLSX, generated using PHP classes.")
+											 ->setKeywords("office 2007 openxml php")
+											 ->setCategory("Office 2007 XLSX Document");
+				
+				
+				// Set active sheet index to the first sheet, so Excel opens this as the first sheet
+				$objPHPExcel->setActiveSheetIndex(0);
+				
+				$basic_report_array = array();
+				
+				foreach($local_array as $key => $value){
+					
+					$value = str_replace("<sub><em>", "(", $value);
+					
+					$value = str_replace("</em></sub>", ")", $value);
+					
+					$basic_report_array[] = array($key, $value);
+					
+				}
+				
+				$objPHPExcel->getActiveSheet()->fromArray($basic_report_array, null, 'A1');
+				
+				foreach(range('A','Z') as $columnID) {
+					$objPHPExcel->getActiveSheet()->getColumnDimension($columnID)
+					->setAutoSize(true);
+				}
+				
+				// Rename worksheet
+				$objPHPExcel->getActiveSheet()->setTitle('Basic Report');
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + - 
+				
+				$objPHPExcel->createSheet();
+				
+				$objPHPExcel->setActiveSheetIndex(1);
+				
+				$daily_report_array = array(
+					
+					array("Jour", "Décompte")
+				
+				);
+				
+				foreach($daily_time_line_data as $daily_data_array){
+					
+					$daily_count = (!empty($daily_data_array["count"]))?(int)$daily_data_array["count"]:0;
+					
+					$daily_report_array[] = array($daily_data_array["record_date"], $daily_count);
+					
+				}
+				
+				$objPHPExcel->getActiveSheet()->fromArray($daily_report_array, null, 'A1', true);
+				
+				foreach(range('A','Z') as $columnID) {
+					$objPHPExcel->getActiveSheet()->getColumnDimension($columnID)
+					->setAutoSize(true);
+				}
+				
+				$objPHPExcel->getActiveSheet()->setTitle('Daily Report');
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+				
+				$objPHPExcel->createSheet();
+				
+				$objPHPExcel->setActiveSheetIndex(2);
+				
+				$hourly_report_array = array(
+					
+					array("Heure", "Décompte")
+				
+				);
+				
+				foreach($hourly_time_line_data as $hourly_data_array){
+					
+					$hourly_count = (!empty($hourly_data_array["count"]))?(int)$hourly_data_array["count"]:0;
+					
+					$hourly_report_array[] = array($hourly_data_array["record_date"], $hourly_data_array["count"]);
+					
+				}
+				
+				$objPHPExcel->getActiveSheet()->fromArray($hourly_report_array, null, 'A1', true);
+				
+				foreach(range('A','Z') as $columnID) {
+					$objPHPExcel->getActiveSheet()->getColumnDimension($columnID)
+					->setAutoSize(true);
+				}
+				
+				$objPHPExcel->getActiveSheet()->setTitle('Hourly Report');
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+				
+				$objPHPExcel->setActiveSheetIndex(0);
+				
+				// + - + - + - + - + - + - + - + - + - + - + - + - + - + - + -
+				// Redirect output to a client’s web browser (Excel2007)
+				header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+				header('Content-Disposition: attachment;filename="'.$anim_name.'-'.date('Y-m-d-H:i:s').'.xlsx"');
+				header('Cache-Control: max-age=0');
+				
+				// If you're serving to IE 9, then the following may be needed
+				header('Cache-Control: max-age=1');
+				
+				// If you're serving to IE over SSL, then the following may be needed
+				header ('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+				header ('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT'); // always modified
+				header ('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+				header ('Pragma: public'); // HTTP/1.0
+				
+				$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+				$objWriter->save('php://output');
+				
+				exit;
+				
+			}else{
+				
+				$app->halt(403);
+					
+			}
 			 
 			
 		}catch(Exception $e){
 			
-			echo $e->getMessage();
-			
-			// $app->halt(403, $e->getMessage());
+			$app->halt(403, $e->getMessage());
 			
 		}
 		

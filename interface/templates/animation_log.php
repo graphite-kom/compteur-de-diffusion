@@ -23,7 +23,9 @@
                         <th>
                         	<?php echo $anim_name?>
                         </th>
-                        <th></th>
+                        <th style="text-align:right;">
+                        	<a href="<?php echo $root_path."animation_log/".$public_key."/export"; ?>" type="button" class="btn btn-primary btn-xs">Export</a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>

@@ -5,7 +5,7 @@
 	function table_row($anim_found, $root_path){
 		
 		$row = chr(9).chr(9).chr(9)."<tr>\n";
-		$row .= chr(9).chr(9).chr(9).chr(9)."<td><a href='".$root_path."animation_log/".$anim_found->public_key."/hourly'>".$anim_found->anim_name."</a></td>\n";
+		$row .= chr(9).chr(9).chr(9).chr(9)."<td><a href='".$root_path."animation_log/".$anim_found->public_key."/view'>".$anim_found->anim_name."</a></td>\n";
 		$row .= chr(9).chr(9).chr(9).chr(9)."<td>".$anim_found->total_play_count."</td>\n";
 		$row .= chr(9).chr(9).chr(9).chr(9)."<td>".$anim_found->first_record_date."</td>\n";
 		$row .= chr(9).chr(9).chr(9)."</tr>\n";
